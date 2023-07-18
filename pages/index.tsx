@@ -1,27 +1,68 @@
-import React from 'react';
-import Box from '@mui/material/Box';
-import Grid from '@mui/material/Grid';
-import List from '@mui/material/List';
-import { TextField } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
-import ListItem from '@mui/material/ListItem';
-import IconButton from '@mui/material/IconButton';
-import ListItemText from '@mui/material/ListItemText';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
+import React, { useEffect, useState, useRef } from "react";
+import Box from "@mui/material/Box";
+import Grid from "@mui/material/Grid";
+import List from "@mui/material/List";
+import { alpha, TextField } from "@mui/material";
+import AddIcon from "@mui/icons-material/Add";
+import ListItem from "@mui/material/ListItem";
+import IconButton from "@mui/material/IconButton";
+import ListItemText from "@mui/material/ListItemText";
+import { createTheme, ThemeProvider } from "@mui/material/styles";
+import zIndex from "@mui/material/styles/zIndex";
 
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#002244',
-      contrastText: '#C0C0C0',
-    }
+      main: "#002244",
+      contrastText: "#C0C0C0",
+    },
   },
   typography: {
-    fontSize: 17
-  }
+    fontSize: 17,
+  },
 });
 
 export default function MyComponent() {
+  const [items, setItems] = useState(["Item 3", "Item 2", "Item 1"]);
+  const [isScrolling, setIsScrolling] = useState(false);
+
+  const scrollContainerRef = useRef<null | HTMLDivElement>(null);
+  const textBoxRef = useRef<null | HTMLDivElement>(null);
+  const scrollTimerRef = useRef<null | NodeJS.Timeout>(null);
+
+  const handleAddItem = () => {
+    const newItem = `Item ${items.length + 1}`;
+    setItems([newItem, ...items]);
+  };
+
+  useEffect(() => {
+    if (textBoxRef.current) {
+      textBoxRef.current.focus()
+    }
+  })
+
+  useEffect(() => {
+    const scrollContainer = scrollContainerRef.current;
+
+    const handleScroll = () => {
+      setIsScrolling(true);
+      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+      scrollTimerRef.current = setTimeout(() => {
+        setIsScrolling(false);
+      }, 300);
+    };
+
+    if (scrollContainer) {
+      scrollContainer.addEventListener("scroll", handleScroll);
+    }
+
+    return () => {
+      if (scrollContainer) {
+        scrollContainer.removeEventListener("scroll", handleScroll);
+      }
+    };
+  }, []);
+
   return (
     <ThemeProvider theme={theme}>
       <Grid container>
@@ -32,37 +73,60 @@ export default function MyComponent() {
               backgroundColor: "primary.main",
               position: "relative",
               borderRight: "0.5px solid #404040",
+              overflowY: "auto",
+              margin: "0rem",
             }}
           >
-            <Box sx={{ position: "absolute", top: "1rem", left: "0.45rem" }}>
-              <IconButton
+            <Box
+              ref={scrollContainerRef}
+              sx={{
+                height: "100vh",
+                overflowY: "auto",
+              }}
+            >
+              <Box
                 sx={{
-                  color: "primary.contrastText",
-                  "&:hover": {
-                    backgroundColor: "primary.light",
-                  },
+                  position: "sticky",
+                  top: 0,
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  zIndex: 1,
+                  backgroundColor: alpha(theme.palette.primary.main, 0.75)
                 }}
               >
-                <AddIcon />
-              </IconButton>
-            </Box>
-            <Box sx={{ height: "3rem" }} />
-            <List>
-              {["Item 1", "Item 2", "Item 3"].map((text, index) => (
-                <ListItem
-                  button
-                  key={text}
+                <IconButton
+                  onClick={handleAddItem}
                   sx={{
-                    justifyContent: "center",
+                    color: "primary.contrastText",
                     "&:hover": {
                       backgroundColor: "primary.light",
                     },
                   }}
                 >
-                  <ListItemText primary={text} sx={{ color: "primary.contrastText" }} />
-                </ListItem>
-              ))}
-            </List>
+                  <AddIcon />
+                </IconButton>
+              </Box>
+              <List>
+                {items.map((text, index) => (
+                  <ListItem
+                    key={text}
+                    sx={{
+                      backgroundColor: "primary.main",
+                      justifyContent: "center",
+                      "&:hover": {
+                        backgroundColor: "primary.light",
+                      },
+                      borderRadius: "4px",
+                    }}
+                  >
+                    <ListItemText
+                      primary={text}
+                      sx={{ color: "primary.contrastText" }}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            </Box>
           </Box>
         </Grid>
         <Grid item xs={9}>
@@ -82,22 +146,29 @@ export default function MyComponent() {
               fullWidth
               variant="standard"
               InputProps={{
-                style: {
-                  color: theme.palette.primary.contrastText
-                },
                 disableUnderline: true,
               }}
+              inputRef={textBoxRef}
               sx={{
                 backgroundColor: "primary.main",
                 padding: "0.5rem",
                 minHeight: "100%",
                 overflow: "auto",
-                color: "primary.contrastText",
+                "& .MuiInputBase-input": {
+                  color: "primary.contrastText",
+                },
               }}
             />
           </Box>
         </Grid>
       </Grid>
+      <style jsx>{`
+         {
+          /* Add this style */
+        }
+        .scrollbar-container::-webkit-scrollbar {
+        }
+      `}</style>
     </ThemeProvider>
   );
 }
